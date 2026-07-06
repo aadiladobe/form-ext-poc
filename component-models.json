@@ -180,6 +180,19 @@
     ]
   },
   {
+    "id": "form",
+    "fields": [
+      {
+        "component": "textarea",
+        "name": "formConfig",
+        "label": "Form configuration",
+        "description": "JSON authored by the Form Builder extension. Edit via the extension rail.",
+        "valueType": "string",
+        "hidden": true
+      }
+    ]
+  },
+  {
     "id": "fragment",
     "fields": [
       {

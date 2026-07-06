@@ -1,0 +1,36 @@
+{
+  "definitions": [
+    {
+      "title": "Form",
+      "id": "form",
+      "plugins": {
+        "xwalk": {
+          "page": {
+            "resourceType": "core/franklin/components/block/v1/block",
+            "template": {
+              "name": "Form",
+              "model": "form",
+              "formConfig": ""
+            }
+          }
+        }
+      }
+    }
+  ],
+  "models": [
+    {
+      "id": "form",
+      "fields": [
+        {
+          "component": "textarea",
+          "name": "formConfig",
+          "label": "Form configuration",
+          "description": "JSON authored by the Form Builder extension. Edit via the extension rail.",
+          "valueType": "string",
+          "hidden": true
+        }
+      ]
+    }
+  ],
+  "filters": []
+}

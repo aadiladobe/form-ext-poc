@@ -1,0 +1,20 @@
+/*
+ * The form is rendered by the tfs-form-app React microfrontend, which injects
+ * its own scoped styles (.tfs-form ...). These rules only cover the host
+ * container and the fallback error message shown when the app cannot load.
+ */
+.form.block .tfs-form-app {
+  width: 100%;
+}
+
+.form.block .tfs-form-error {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 6px;
+  background: #fdecea;
+  color: #611a15;
+}
+
+.form.block .tfs-form-error code {
+  word-break: break-all;
+}
