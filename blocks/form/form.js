@@ -1,5 +1,6 @@
 import { loadScript } from '../../scripts/aem.js';
 import { TFS_FORM_APP } from './form-config.js';
+import { resolveFormFields } from './fragments.js';
 
 function normalizeSpec(specOrJson) {
   const parsed = typeof specOrJson === 'string' ? JSON.parse(specOrJson) : specOrJson;
@@ -99,6 +100,28 @@ function loadFormApp() {
 }
 
 /**
+ * Shows the fully resolved (fragments expanded) JSON for authors/debugging.
+ * Kept as plain DOM, separate from the authored config cell, so it can never be
+ * mistaken by Universal Editor for a change to the authored formConfig property.
+ * @param {Element} block
+ * @param {object} resolvedSpec
+ */
+function renderResolvedDebugView(block, resolvedSpec) {
+  let details = block.querySelector(':scope > .tfs-form-debug');
+  if (!details) {
+    details = document.createElement('details');
+    details.className = 'tfs-form-debug';
+    details.open = true;
+    const summary = document.createElement('summary');
+    summary.textContent = 'Resolved form JSON (fragments expanded)';
+    const pre = document.createElement('pre');
+    details.append(summary, pre);
+    block.appendChild(details);
+  }
+  details.querySelector('pre').textContent = JSON.stringify(resolvedSpec, null, 2);
+}
+
+/**
  * Re-render the React microfrontend for a form block.
  * Only updates an existing config cell — never creates synthetic DOM that would not persist.
  * @param {Element} block
@@ -119,8 +142,13 @@ export async function renderFormBlock(block, specOrJson) {
     cell.textContent = JSON.stringify(spec);
   }
 
+  const hadFragments = spec.fields.some((f) => f.type === 'fragment');
+  const resolvedFields = hadFragments ? await resolveFormFields(spec.fields) : spec.fields;
+  const resolvedSpec = { ...spec, fields: resolvedFields };
+  if (hadFragments) renderResolvedDebugView(block, resolvedSpec);
+
   await loadFormApp();
-  window.TFSForm.render(mount, spec);
+  window.TFSForm.render(mount, resolvedSpec);
 }
 
 /**
