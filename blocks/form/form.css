@@ -18,3 +18,28 @@
 .form.block .tfs-form-error code {
   word-break: break-all;
 }
+
+.form.block .tfs-form-debug {
+  margin-top: 12px;
+  border: 1px dashed var(--dark-color, #ccc);
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+
+.form.block .tfs-form-debug summary {
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.form.block .tfs-form-debug pre {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 0.75rem;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
