@@ -1,6 +1,6 @@
 import { loadScript } from '../../scripts/aem.js';
 import { TFS_FORM_APP } from './form-config.js';
-import { resolveFormFields } from './fragments.js';
+import resolveFormFields from './fragments.js';
 
 function normalizeSpec(specOrJson) {
   const parsed = typeof specOrJson === 'string' ? JSON.parse(specOrJson) : specOrJson;

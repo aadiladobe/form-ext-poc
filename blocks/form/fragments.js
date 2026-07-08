@@ -45,7 +45,10 @@ function fetchFragmentFields(path, cache) {
         if (!resp.ok) throw new Error(`Fragment not found (${resp.status}): ${path}`);
         return resp.text();
       })
-      .then((html) => extractFieldsFromDoc(new DOMParser().parseFromString(html, 'text/html'), path))
+      .then((html) => {
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        return extractFieldsFromDoc(doc, path);
+      })
       .catch((error) => {
         cache.delete(key);
         throw error;
@@ -56,56 +59,53 @@ function fetchFragmentFields(path, cache) {
 }
 
 /**
+ * Resolves a single field: passes non-fragment fields through untouched, or fetches and
+ * recursively flattens a fragment reference into (possibly several) resolved fields.
+ * @param {object} field
+ * @param {{seenPaths: Set<string>, depth: number, cache: Map}} ctx
+ * @returns {Promise<Array>} one or more resolved fields
+ */
+async function resolveField(field, ctx) {
+  if (field?.type !== 'fragment') return [field];
+
+  const { path } = field;
+  if (!path || !path.startsWith('/') || path.startsWith('//')) {
+    return [{ type: 'fragment-error', path: path || '', message: 'No valid fragment path set' }];
+  }
+
+  const key = normalizePath(path);
+  if (ctx.seenPaths.has(key)) {
+    return [{ type: 'fragment-error', path, message: 'Circular fragment reference' }];
+  }
+  if (ctx.depth >= MAX_DEPTH) {
+    return [{ type: 'fragment-error', path, message: 'Fragment nesting too deep' }];
+  }
+
+  try {
+    const fetched = await fetchFragmentFields(path, ctx.cache);
+    // eslint-disable-next-line no-use-before-define
+    const nested = await resolveFormFields(fetched, {
+      seenPaths: new Set([...ctx.seenPaths, key]),
+      depth: ctx.depth + 1,
+      cache: ctx.cache,
+    });
+    const slug = slugify(key) || `fragment-${ctx.depth}`;
+    return nested.map((f) => (f?.name ? { ...f, name: `${slug}__${f.name}` } : f));
+  } catch (error) {
+    return [{ type: 'fragment-error', path, message: error?.message || 'Failed to load fragment' }];
+  }
+}
+
+/**
  * Recursively flattens `fragment` field entries into their referenced fields.
  * @param {Array} fields raw field list, may contain { type: 'fragment', path }
  * @param {object} [state] internal recursion state — leave unset when calling from outside
- * @returns {Promise<Array>} flattened fields, fragment entries replaced or turned into fragment-error
+ * @returns {Promise<Array>} flattened fields, with fragments resolved or turned into errors
  */
-export async function resolveFormFields(fields, state = {}) {
+export default async function resolveFormFields(fields, state = {}) {
   const { seenPaths = new Set(), depth = 0, cache = new Map() } = state;
-  const out = [];
-
-  for (const field of (fields || [])) {
-    if (field?.type !== 'fragment') {
-      out.push(field);
-      // eslint-disable-next-line no-continue
-      continue;
-    }
-
-    const { path } = field;
-    if (!path || !path.startsWith('/') || path.startsWith('//')) {
-      out.push({ type: 'fragment-error', path: path || '', message: 'No valid fragment path set' });
-      // eslint-disable-next-line no-continue
-      continue;
-    }
-
-    const key = normalizePath(path);
-    if (seenPaths.has(key)) {
-      out.push({ type: 'fragment-error', path, message: 'Circular fragment reference' });
-      // eslint-disable-next-line no-continue
-      continue;
-    }
-    if (depth >= MAX_DEPTH) {
-      out.push({ type: 'fragment-error', path, message: 'Fragment nesting too deep' });
-      // eslint-disable-next-line no-continue
-      continue;
-    }
-
-    try {
-      // eslint-disable-next-line no-await-in-loop
-      const fetched = await fetchFragmentFields(path, cache);
-      // eslint-disable-next-line no-await-in-loop
-      const nested = await resolveFormFields(fetched, {
-        seenPaths: new Set([...seenPaths, key]),
-        depth: depth + 1,
-        cache,
-      });
-      const slug = slugify(key) || `fragment-${depth}`;
-      out.push(...nested.map((f) => (f?.name ? { ...f, name: `${slug}__${f.name}` } : f)));
-    } catch (error) {
-      out.push({ type: 'fragment-error', path, message: error?.message || 'Failed to load fragment' });
-    }
-  }
-
-  return out;
+  const resolved = await Promise.all(
+    (fields || []).map((field) => resolveField(field, { seenPaths, depth, cache })),
+  );
+  return resolved.flat();
 }
