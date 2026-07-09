@@ -6,5 +6,5 @@ export const TFS_FORM_APP = {
   // URL of the built React microfrontend bundle (tfs-form-app).
   // Served over HTTPS locally so this HTTP EDS page and the HTTPS Universal
   // Editor extension can both load it without mixed-content restrictions.
-  scriptUrl: 'https://localhost:3001/tfs-form.iife.js',
+  scriptUrl: 'https://266146-548scarletermine-stage.adobeio-static.net/tfs-form.iife.js',
 };
