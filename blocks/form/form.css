@@ -54,3 +54,7 @@ header.header-wrapper,
 footer.footer-wrapper {
   display: none !important;
 }
+.tfs-form {
+  max-width: unset;
+  margin: 4rem auto;
+}
