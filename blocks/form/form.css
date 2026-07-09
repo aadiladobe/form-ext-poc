@@ -48,3 +48,9 @@
 .form.block > div > div {
   display: none;
 }
+
+.form.block .tfs-form-debug,
+header.header-wrapper,
+footer.footer-wrapper {
+  display: none !important;
+}
