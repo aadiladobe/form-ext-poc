@@ -4,9 +4,20 @@ import resolveFormFields from './fragments.js';
 
 function normalizeSpec(specOrJson) {
   const parsed = typeof specOrJson === 'string' ? JSON.parse(specOrJson) : specOrJson;
-  return {
+  const mode = parsed?.mode === 'multistep' ? 'multistep' : 'single';
+  const base = {
+    mode,
     title: parsed?.title || '',
     submitLabel: parsed?.submitLabel || 'Submit',
+  };
+  if (mode === 'multistep') {
+    return {
+      ...base,
+      steps: Array.isArray(parsed?.steps) ? parsed.steps : [],
+    };
+  }
+  return {
+    ...base,
     fields: Array.isArray(parsed?.fields) ? parsed.fields : [],
   };
 }
@@ -24,13 +35,13 @@ function findConfigCell(block) {
 export function readConfig(block) {
   const cell = findConfigCell(block);
   const raw = (cell?.textContent || '').trim();
-  if (!raw) return { title: '', submitLabel: 'Submit', fields: [] };
+  if (!raw) return { mode: 'single', title: '', submitLabel: 'Submit', fields: [] };
   try {
     return normalizeSpec(raw);
   } catch (error) {
     // eslint-disable-next-line no-console
     console.warn('[form] formConfig is not valid JSON', error);
-    return { title: '', submitLabel: 'Submit', fields: [] };
+    return { mode: 'single', title: '', submitLabel: 'Submit', fields: [] };
   }
 }
 
@@ -142,10 +153,13 @@ export async function renderFormBlock(block, specOrJson) {
     cell.textContent = JSON.stringify(spec);
   }
 
-  const hadFragments = spec.fields.some((f) => f.type === 'fragment');
-  const resolvedFields = hadFragments ? await resolveFormFields(spec.fields) : spec.fields;
-  const resolvedSpec = { ...spec, fields: resolvedFields };
-  if (hadFragments) renderResolvedDebugView(block, resolvedSpec);
+  let resolvedSpec = spec;
+  if (spec.mode !== 'multistep') {
+    const hadFragments = (spec.fields || []).some((f) => f.type === 'fragment');
+    const resolvedFields = hadFragments ? await resolveFormFields(spec.fields) : spec.fields;
+    resolvedSpec = { ...spec, fields: resolvedFields };
+    if (hadFragments) renderResolvedDebugView(block, resolvedSpec);
+  }
 
   await loadFormApp();
   window.TFSForm.render(mount, resolvedSpec);
