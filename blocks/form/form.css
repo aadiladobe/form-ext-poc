@@ -57,4 +57,5 @@ footer.footer-wrapper {
 .tfs-form {
   max-width: unset !important;
   margin: 4rem auto;
+  gap: 1.5rem !important;
 }
